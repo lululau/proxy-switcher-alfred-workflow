@@ -25,3 +25,7 @@ If you have a file named `.proxyswitcher.rc` in your home dir, then ProxySwitche
  2. Double-click it.
  
  3. If you want ProxySwitcher only show proxy options for Wi-Fi, then you can put one line `"Wi-Fi\n"`(without quotes, and `\n` means an UNIX new-line character) into `~/.proxyswitcher.rc`
+
+ Screenshots:
+ 
+ ![images](https://github.com/lululau/proxyswitcher/raw/master/screenshot.png)
