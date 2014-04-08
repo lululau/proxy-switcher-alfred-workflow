@@ -14,11 +14,11 @@ If you have a file named `.proxyswitcher.rc` in your home dir, then ProxySwitche
  You could get all available service names via this command:  `networksetup -listallnetworkservices`
  
  
- Requirements:
+### Requirements:
  
  1. Alfred.app with PowerPack activated.
  
- Install steps:
+### Install steps:
  
  1. Download the ProxySwitcher.alfredworkflow file.
  
@@ -26,6 +26,6 @@ If you have a file named `.proxyswitcher.rc` in your home dir, then ProxySwitche
  
  3. If you want ProxySwitcher only show proxy options for Wi-Fi, then you can put one line `"Wi-Fi\n"`(without quotes, and `\n` means an UNIX new-line character) into `~/.proxyswitcher.rc`
 
- Screenshots:
+### Screenshots:
  
  ![images](https://github.com/lululau/proxyswitcher/raw/master/screenshot.png)
