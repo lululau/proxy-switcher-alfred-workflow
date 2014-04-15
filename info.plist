@@ -8,6 +8,8 @@
 	<string>Tools</string>
 	<key>connections</key>
 	<dict>
+		<key>06C9C4A9-38CE-441A-8D06-E2F2D8B39B60</key>
+		<array/>
 		<key>7DD3BDE5-A157-42E5-9376-F681FB50A4EE</key>
 		<array>
 			<dict>
@@ -40,7 +42,7 @@
 				<key>keyword</key>
 				<string>proxy</string>
 				<key>script</key>
-				<string>bash proxyswitcher.sh "{query}"</string>
+				<string>ruby proxy_switcher.rb "{query}"</string>
 				<key>subtext</key>
 				<string>Enable / Disable Proxies</string>
 				<key>title</key>
@@ -65,7 +67,7 @@
 				<key>script</key>
 				<string>if [[ ! -z "{query}" ]]
 then
-eval "sudo networksetup {query}"
+{query}
 fi</string>
 				<key>type</key>
 				<integer>0</integer>
@@ -91,12 +93,12 @@ If you have a file named ‘.proxyswitcher.rc’ in your home dir, then ProxySwi
 		<key>06C9C4A9-38CE-441A-8D06-E2F2D8B39B60</key>
 		<dict>
 			<key>ypos</key>
-			<real>60</real>
+			<real>200</real>
 		</dict>
 		<key>7DD3BDE5-A157-42E5-9376-F681FB50A4EE</key>
 		<dict>
 			<key>ypos</key>
-			<real>60</real>
+			<real>90</real>
 		</dict>
 	</dict>
 	<key>webaddress</key>
