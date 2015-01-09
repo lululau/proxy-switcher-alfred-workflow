@@ -70,7 +70,7 @@ class ProxySwitcher
         io.each do |line|
           line.chomp!
           if line =~ /^Enabled: (Yes|No)/
-            if $1 == 'yes'
+            if $1 == 'Yes'
               @status = 'On'
               @reversed_status = 'off'
             else
