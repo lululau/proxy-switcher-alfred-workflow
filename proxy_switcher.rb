@@ -20,7 +20,7 @@ class ProxySwitcher
   LIST_SERVICES_CMD = "networksetup -listallnetworkservices | sed -n '2,$p'"
 
   def initialize
-    @services = Config.new.services || `#{LIST_SERVICES_CMD}`.lines.map(&:chomp)
+    @services = Config.new.services || `#{LIST_SERVICES_CMD}`.force_encoding("UTF-8").lines.map(&:chomp)
   end
 
   def search(query)
