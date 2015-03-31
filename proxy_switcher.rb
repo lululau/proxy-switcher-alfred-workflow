@@ -66,7 +66,7 @@ EOF
     attr :human_name
 
     GET_INFO_CMD = "networksetup -get%s '%s'"
-    TURN_ON_CMD = "networksetup -set%s '%s' '%s' '%s' %s %s %s;networksetup -set%sstate '%s' on"
+    TURN_ON_CMD = "networksetup -set%s '%s' '%s' '%s' %s %s %s"
     TURN_OFF_CMD = "networksetup -set%sstate '%s' off"
 
     def initialize(service, name, options={})
@@ -111,9 +111,9 @@ EOF
         @attributes[:arg] = TURN_OFF_CMD % [@name, @service, 'off']
       else
         if @auth
-          @attributes[:arg] = TURN_ON_CMD % [@name, @service, @server, @port, 'on', "'#@username'", "'#@password'", @name, @service]
+          @attributes[:arg] = TURN_ON_CMD % [@name, @service, @server, @port, 'on', "'#@username'", "'#@password'"]
         else
-          @attributes[:arg] = TURN_ON_CMD % [@name, @service, @server, @port, '', "", "", @name, @service]
+          @attributes[:arg] = TURN_ON_CMD % [@name, @service, @server, @port, '', "", ""]
         end
       end
       @title = "%s: %s, %s, %s" % [@human_name, @status, @server, @port]  
@@ -152,7 +152,7 @@ EOF
   class AutoProxy < ProxyOption
 
     GET_INFO_CMD = "networksetup -getautoproxyurl '%s'"
-    TURN_ON_CMD = "networksetup -set%surl '%s' '%s';networksetup -set%sstate '%s' on"
+    TURN_ON_CMD = "networksetup -set%surl '%s' '%s'"
     TURN_OFF_CMD = "networksetup -set%sstate '%s' off"
 
     def initialize(service, options)
@@ -179,7 +179,7 @@ EOF
       if @status == 'On'
         @attributes[:arg] = TURN_OFF_CMD % [@name, @service, 'off']
       else
-        @attributes[:arg] = TURN_ON_CMD % [@name, @service, @url, @name, @service]
+        @attributes[:arg] = TURN_ON_CMD % [@name, @service, @url]
       end
       @title = "%s: %s, %s" % [@human_name, @status, @url]
     end
