@@ -227,16 +227,16 @@ class WebHistoryFileItem < FileItem
 end
 
 class ItemList < DelegateClass(Array)
-  def initialize()
-     @items = []
-     super @items
+  def initialize(items=[])
+     @items = items
+     super items
   end
 
   def to_xml
     xml = <<-EOF
     <?xml version="1.0"?>
     <items>
-#{@items.map { |item| "    " + item.to_xml }.join("\n")}
+    #{@items.map { |item| "    " + item.to_xml }.join("\n") rescue ''}
     </items>
     EOF
   end

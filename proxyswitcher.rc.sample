@@ -1,0 +1,24 @@
+AutoDiscoveryProxy:
+AutoProxy:
+  URL: http://localhost:8080/example.pac
+SocksProxy:
+  Host: 127.0.0.1
+  Port: 8080
+  Auth: true
+  Username: hello
+  Password: 123123
+HTTPProxy:
+  Host: 127.0.0.1
+  Port: 8080
+HTTPSProxy:
+  Host: 127.0.0.1
+  Port: 8080
+FTPProxy:
+  Host: 127.0.0.1
+  Port: 8080
+RTSPProxy:
+  Host: 127.0.0.1
+  Port: 8080
+GopherProxy:
+  Host: 127.0.0.1
+  Port: 8080

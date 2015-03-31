@@ -1,90 +1,121 @@
 #!/usr/bin/env ruby
 
+require "yaml"
 require_relative "alfred"
 
 class ProxySwitcher
 
   class Config
 
-    attr :services
+    attr :proxies
 
     CONFIG_FILE = File.expand_path '~/.proxyswitcher.rc'
 
-    def initialize
+    def initialize(service='Wi-Fi')
       if test ?e, CONFIG_FILE
-        @services = IO.readlines(CONFIG_FILE).map(&:chomp)
+        @proxies = YAML.load(IO.read(CONFIG_FILE)).map { |k, v| ProxyOption.buildProxy(service, k, v) }
       end
     end
   end
 
-  LIST_SERVICES_CMD = "networksetup -listallnetworkservices | sed -n '2,$p'"
+  PRIMARY_SERVICE_CMD = <<-'EOF'
+SERVICE_GUID=`printf "open\nget State:/Network/Global/IPv4\nd.show" | \
+scutil | grep "PrimaryService" | awk '{print $3}'`
+SERVICE_NAME=`printf "open\nget Setup:/Network/Service/$SERVICE_GUID\nd.show" |\
+scutil | grep "UserDefinedName" | awk -F': ' '{print $2}'`
+echo $SERVICE_NAME
+EOF
 
   def initialize
-    @services = Config.new.services || `#{LIST_SERVICES_CMD}`.force_encoding("UTF-8").lines.map(&:chomp)
+    @service = self.primary_service
+    @proxies = Config.new(@service).proxies
   end
 
-  def search(query)
-    items = ItemList.new
-    @services.grep(/#{query}/i).each do |name| 
-      items.concat NetworkService.new(name).proxy_options
-    end
-    items
+  def primary_service
+    `#{PRIMARY_SERVICE_CMD}`.chomp
   end
 
-  class NetworkService
-
-    attr :proxy_options, :name
-
-    def initialize(name='Wi-Fi')
-      @name = name
-      @proxy_options = []
-      @proxy_options << ProxyAutoDiscovery.new(self)
-      @proxy_options << AutoProxy.new(self)
-      ['Web Proxy', 'Secure Web Proxy', 'FTP Proxy',
-        'Socks Firewall Proxy', 'Streaming Proxy', 'Gopher Proxy'].each do |proxy_name|
-          @proxy_options << ProxyOption.new(self, proxy_name)
-      end      
-    end
+  def to_xml
+    ItemList.new(@proxies).to_xml
   end
-
+  
   class ProxyOption < Item
+
+    def self.buildProxy(service, name, options)
+      case name
+      when 'AutoDiscoveryProxy'
+        ProxyAutoDiscovery.new(service)
+      when 'AutoProxy'
+        AutoProxy.new(service, options)
+      else
+        ProxyOption.new(service, name, options)
+      end
+    end
+
+    Names = {
+      'AutoDiscoveryProxy' => 'proxyautodiscovery',
+      'AutoProxy' => 'autoproxy',
+      'SocksProxy' => 'socksfirewallproxy',
+      'HTTPProxy' => 'webproxy',
+      'HTTPSProxy' => 'securewebproxy',
+      'FTPProxy' => 'ftpproxy',
+      'RTSPProxy' => 'streamingproxy',
+      'GopherProxy' => 'gopherproxy'
+    }
 
     attr :human_name
 
     GET_INFO_CMD = "networksetup -get%s '%s'"
-    SET_STATE_CMD = "networksetup -set%sstate '%s' %s"
+    TURN_ON_CMD = "networksetup -set%s '%s' '%s' '%s' %s %s %s;networksetup -set%sstate '%s' on"
+    TURN_OFF_CMD = "networksetup -set%sstate '%s' off"
 
-    def initialize(service, name)
+    def initialize(service, name, options={})
       super()
       @service = service
       @human_name = name
-      @name = name.downcase.gsub(/ /, "")
+      @name = Names[name]
+      self.parse_options(options)
       self.fetch_info
       @attributes[:uid] = @name    
-      @subtitle = @service.name
+      @subtitle = @service
       @icon[:text] = "%s.png" % @status
     end
 
+    def parse_options(options)
+      @url = options['URL']
+      @server = options['Host']
+      @port = options['Port']
+      @auth = options['Auth']
+      @username = options['Username']
+      @password = options['Password']
+    end
+
     def fetch_info
-      IO.popen GET_INFO_CMD % [@name, @service.name] do |io|
+      IO.popen GET_INFO_CMD % [@name, @service] do |io|
         io.each do |line|
           line.chomp!
           if line =~ /^Enabled: (Yes|No)/
             if $1 == 'Yes'
               @status = 'On'
-              @reversed_status = 'off'
             else
               @status = 'Off'
-              @reversed_status = 'on'
             end
-          elsif line.start_with? 'Server:'
+          elsif line.start_with? 'Server:' and @status == 'On'
             @server = line
-          elsif line.start_with? 'Port:'            
+          elsif line.start_with? 'Port:' and @status == 'On'
             @port = line
           end
         end
       end
-      @attributes[:arg] = SET_STATE_CMD % [@name, @service.name, @reversed_status]
+      if @status == 'On'
+        @attributes[:arg] = TURN_OFF_CMD % [@name, @service, 'off']
+      else
+        if @auth
+          @attributes[:arg] = TURN_ON_CMD % [@name, @service, @server, @port, 'on', "'#@username'", "'#@password'", @name, @service]
+        else
+          @attributes[:arg] = TURN_ON_CMD % [@name, @service, @server, @port, '', "", "", @name, @service]
+        end
+      end
       @title = "%s: %s, %s, %s" % [@human_name, @status, @server, @port]  
     end
 
@@ -95,11 +126,11 @@ class ProxySwitcher
     SET_STATE_CMD = "networksetup -setproxyautodiscovery '%s' %s"
 
     def initialize(service)
-      super(service, 'Proxy Auto Discovery')
+      super(service, 'AutoDiscoveryProxy')
     end
 
     def fetch_info
-      IO.popen ProxyOption::GET_INFO_CMD % [@name, @service.name] do |io|
+      IO.popen ProxyOption::GET_INFO_CMD % [@name, @service] do |io|
         io.each do |line|
           line.chomp!
           if line =~ /: (On|Off)/
@@ -113,7 +144,7 @@ class ProxySwitcher
           end
         end
       end
-      @attributes[:arg] = SET_STATE_CMD % [@service.name, @reversed_status]
+      @attributes[:arg] = SET_STATE_CMD % [@service, @reversed_status]
       @title = "%s: %s" % [@human_name, @status]  
     end
   end
@@ -121,13 +152,15 @@ class ProxySwitcher
   class AutoProxy < ProxyOption
 
     GET_INFO_CMD = "networksetup -getautoproxyurl '%s'"
+    TURN_ON_CMD = "networksetup -set%surl '%s' '%s';networksetup -set%sstate '%s' on"
+    TURN_OFF_CMD = "networksetup -set%sstate '%s' off"
 
-    def initialize(service)
-      super(service, 'Auto Proxy')
+    def initialize(service, options)
+      super(service, 'AutoProxy', options)
     end
 
     def fetch_info
-      IO.popen GET_INFO_CMD % @service.name do |io|
+      IO.popen GET_INFO_CMD % @service do |io|
         io.each do |line|
           line.chomp!
           if line =~ /^Enabled: (Yes|No)/
@@ -138,17 +171,21 @@ class ProxySwitcher
               @status = 'Off'
               @reversed_status = 'on'
             end
-          elsif line.start_with? 'URL:'
+          elsif line.start_with? 'URL:' and @status == 'On'
             @url = line
           end
         end
       end
-      @attributes[:arg] = ProxyOption::SET_STATE_CMD % [@name, @service.name, @reversed_status]
+      if @status == 'On'
+        @attributes[:arg] = TURN_OFF_CMD % [@name, @service, 'off']
+      else
+        @attributes[:arg] = TURN_ON_CMD % [@name, @service, @url, @name, @service]
+      end
       @title = "%s: %s, %s" % [@human_name, @status, @url]
     end
   end
 end
 
 if $0 == __FILE__
-  puts ProxySwitcher.new.search(ARGV[0] && ARGV[0].strip).to_xml
+  puts ProxySwitcher.new.to_xml
 end

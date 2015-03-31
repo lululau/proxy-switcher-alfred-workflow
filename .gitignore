@@ -1,0 +1,12 @@
+*#
+*.swl
+*.swm
+*.swn
+*.swo
+*.swo
+*.swp
+*~
+.#*
+.DS_Store
+._.DS_Store
+._.TemporaryItems
