@@ -49,7 +49,7 @@ class ProxySwitcher
 
   class ProxyOption < Item
 
-    attr :humane_name
+    attr :human_name
 
     GET_INFO_CMD = "networksetup -get%s '%s'"
     SET_STATE_CMD = "networksetup -set%sstate '%s' %s"
